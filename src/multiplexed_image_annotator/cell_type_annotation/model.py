@@ -764,14 +764,8 @@ class Annotator(object):
             f = os.path.join(self.result_dir, f"{self.batch_id}_colorized_annotation_{i}.png")
             Image.fromarray(colormap).save(f)
 
-
-            f = this_file.parent / "_working_dir_temp/output_img.png"
-            f.parent.mkdir(exist_ok=True)
-            Image.fromarray(colormap3).save(f)
-
             f = os.path.join(self.result_dir, f"{self.batch_id}_confidence_{i}.png")
             Image.fromarray(colormap2).save(f)
-
 
 
     def cell_type_composition(self, reduction=True, integrate=False):
