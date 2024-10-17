@@ -125,6 +125,7 @@ class Annotator(object):
         self.annotations = []
         self.confidence = []
         self.confidence_values = []
+        self.confidence_thresholds = []
         self.votes = []
 
         self.immune_annotations = []
@@ -420,6 +421,7 @@ class Annotator(object):
                 self.annotations.append([])
                 self.confidence.append([])
                 self.confidence_values.append([])
+                self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.immune_full_pred[i])):
                     vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
@@ -443,6 +445,7 @@ class Annotator(object):
                     thresh = min(o1, o2, o3, self.confidence_thresh) if self.cell_type_confidence[max_vote] < 0 else self.cell_type_confidence[max_vote]
                     self.votes[i].append(vote)
                     self.confidence_values[i].append(vote[max_vote])
+                    self.confidence_thresholds[i].append(thresh)
                     if vote[max_vote] < thresh:
                         self.annotations[i].append("Others")
                         self.confidence[i].append([192, 192, 192])
@@ -455,6 +458,7 @@ class Annotator(object):
                 self.annotations.append([])
                 self.confidence.append([])
                 self.confidence_values.append([])
+                self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.immune_annotations[i])):
                     vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
@@ -476,6 +480,7 @@ class Annotator(object):
                     thresh = min(o1, o2, self.confidence_thresh) if self.cell_type_confidence[max_vote] < 0 else self.cell_type_confidence[max_vote]
                     self.votes[i].append(vote)
                     self.confidence_values[i].append(vote[max_vote])
+                    self.confidence_thresholds[i].append(thresh)
                     if vote[max_vote] < thresh:
                         self.annotations[i].append("Others")
                         self.confidence[i].append([192, 192, 192])
@@ -488,6 +493,7 @@ class Annotator(object):
                 self.annotations.append([])
                 self.confidence.append([])
                 self.confidence_values.append([])
+                self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.struct_annotations[i])):
                     vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
@@ -509,6 +515,7 @@ class Annotator(object):
                     thresh = min(o1, o2, self.confidence_thresh) if self.cell_type_confidence[max_vote] < 0 else self.cell_type_confidence[max_vote]
                     self.votes[i].append(vote)
                     self.confidence_values[i].append(vote[max_vote])
+                    self.confidence_thresholds[i].append(thresh)
                     if vote[max_vote] < thresh:
                         self.annotations[i].append("Others")
                         self.confidence[i].append([192, 192, 192])
@@ -521,6 +528,7 @@ class Annotator(object):
                 self.annotations.append([])
                 self.confidence.append([])
                 self.confidence_values.append([])
+                self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.immune_annotations[i])):
                     vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
@@ -540,8 +548,9 @@ class Annotator(object):
                     max_vote = max(vote, key=vote.get)
 
                     thresh = min(o1, o2, self.confidence_thresh) if self.cell_type_confidence[max_vote] < 0 else self.cell_type_confidence[max_vote]
-                    self.confidence_values[i].append(vote[max_vote])
                     self.votes[i].append(vote)
+                    self.confidence_values[i].append(vote[max_vote])
+                    self.confidence_thresholds[i].append(thresh)
                     if vote[max_vote] < thresh:
                         self.annotations[i].append("Others")
                         self.confidence[i].append([192, 192, 192])
@@ -554,12 +563,14 @@ class Annotator(object):
                 self.annotations.append([])
                 self.confidence.append([])
                 self.confidence_values.append([])
+                self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.immune_annotations[i])):
                     max_vote = max(self.immune_annotations[i][j], key=self.immune_annotations[i][j].get)
                     thresh = self.cell_type_confidence[max_vote] if self.cell_type_confidence[max_vote] > 0 else self.confidence_thresh
-                    self.confidence_values[i].append(self.immune_annotations[i][j][max_vote])
                     self.votes[i].append(self.immune_annotations[i][j])
+                    self.confidence_values[i].append(self.immune_annotations[i][j][max_vote])
+                    self.confidence_thresholds[i].append(thresh)
                     if max_vote != "Others" and self.immune_annotations[i][j][max_vote] < thresh:
                         self.annotations[i].append("Others")
                         self.confidence[i].append([192, 192, 192])
@@ -572,12 +583,14 @@ class Annotator(object):
                 self.annotations.append([])
                 self.confidence.append([])
                 self.confidence_values.append([])
+                self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.struct_annotations[i])):
                     max_vote = max(self.struct_annotations[i][j], key=self.struct_annotations[i][j].get)
                     thresh = self.cell_type_confidence[max_vote] if self.cell_type_confidence[max_vote] > 0 else self.confidence_thresh
                     self.votes[i].append(self.struct_annotations[i][j])
                     self.confidence_values[i].append(self.struct_annotations[i][j][max_vote])
+                    self.confidence_thresholds[i].append(thresh)
                     if max_vote != "Others" and self.struct_annotations[i][j][max_vote] < thresh:
                         self.annotations[i].append("Others")
                         self.confidence[i].append([192, 192, 192])
@@ -590,12 +603,14 @@ class Annotator(object):
                 self.annotations.append([])
                 self.confidence.append([])
                 self.confidence_values.append([])
+                self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.nerve_annotations[i])):
                     max_vote = max(self.nerve_annotations[i][j], key=self.nerve_annotations[i][j].get)
                     thresh = self.cell_type_confidence[max_vote] if self.cell_type_confidence[max_vote] > 0 else self.confidence_thresh
                     self.votes[i].append(self.nerve_annotations[i][j])
                     self.confidence_values[i].append(self.nerve_annotations[i][j][max_vote])
+                    self.confidence_thresholds[i].append(thresh)
                     if max_vote != "Others" and self.nerve_annotations[i][j][max_vote] < thresh:
                         self.annotations[i].append("Others")
                         self.confidence[i].append([192, 192, 192])
