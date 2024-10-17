@@ -4,10 +4,19 @@ from pathlib import Path
 import torch
 from .utils import gui_run
 
+cuda_available = torch.cuda.is_available()
+print(f"{cuda_available=}")
 
-def main(marker_list_path: Path, image_path: Path, mask_path: Path):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    main_dir = Path()
+
+def main(
+    marker_list_path: Path,
+    image_path: Path,
+    mask_path: Path,
+    results_dir: Path,
+):
+    results_dir.mkdir(exist_ok=True, parents=True)
+
+    device = torch.device("cuda" if cuda_available else "cpu")
     batch_id = ""
     strict = False
     normalization = True
@@ -22,7 +31,7 @@ def main(marker_list_path: Path, image_path: Path, mask_path: Path):
         image_path=image_path,
         mask_path=mask_path,
         device=device,
-        main_dir=main_dir,
+        main_dir=results_dir,
         batch_id=batch_id,
         bs=batch_size,
         strict=strict,
@@ -41,10 +50,12 @@ if __name__ == "__main__":
     p.add_argument("marker_list_path", type=Path)
     p.add_argument("image_path", type=Path)
     p.add_argument("mask_path", type=Path)
+    p.add_argument("results_dir", type=Path, default=Path("results"))
     args = p.parse_args()
 
     main(
         marker_list_path=args.marker_list_path,
         image_path=args.image_path,
         mask_path=args.mask_path,
+        results_dir=args.results_dir,
     )
