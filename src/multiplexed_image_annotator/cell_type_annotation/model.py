@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from pathlib import Path
 
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -22,6 +23,8 @@ from sklearn.neighbors import NearestNeighbors
 import umap
 
 import pickle
+this_file = Path(__file__)
+models_dir = this_file.parent / 'models'
 
 def number_to_rgb(value, cmap_name='viridis'):
     if value < 0 or value > 1:
@@ -173,45 +176,45 @@ class Annotator(object):
         self.annotations = []
     
     def load_models(self):
-        if os.path.exists("src/multiplexed_image_annotator/cell_type_annotation/models/immune_base.pth"):
+        if (m := models_dir / "immune_base.pth").is_file():
             self.immune_base_model = vit_s(img_size=40, in_chans=7, num_classes=5, drop_path_rate=0.1, global_pool=False)
-            checkpoint = torch.load("src/multiplexed_image_annotator/cell_type_annotation/models/immune_base.pth", map_location=self.device)["model"]
+            checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_base_model.load_state_dict(checkpoint)
             self.immune_base_model.eval()
             self.immune_base_model.to(self.device)
         else:
             print("Immune base model not found")
         
-        if os.path.exists("src/multiplexed_image_annotator/cell_type_annotation/models/immune_extended.pth"):
+        if (m := models_dir / "immune_extended.pth").is_file():
             self.immune_extended_model = vit_m(img_size=40, in_chans=10, num_classes=8, drop_path_rate=0.1, global_pool=False)
-            checkpoint = torch.load("src/multiplexed_image_annotator/cell_type_annotation/models/immune_extended.pth", map_location=self.device)["model"]
+            checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_extended_model.load_state_dict(checkpoint)
             self.immune_extended_model.eval()
             self.immune_extended_model.to(self.device)
         else:
             print("Immune extended model not found")
         
-        if os.path.exists("src/multiplexed_image_annotator/cell_type_annotation/models/immune_full.pth"):
+        if (m := models_dir / "immune_full.pth").is_file():
             self.immune_full_model = vit_l(img_size=40, in_chans=15, num_classes=12, drop_path_rate=0.1, global_pool=False)
-            checkpoint = torch.load("src/multiplexed_image_annotator/cell_type_annotation/models/immune_full.pth", map_location=self.device)["model"]
+            checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_full_model.load_state_dict(checkpoint)
             self.immune_full_model.eval()
             self.immune_full_model.to(self.device)
         else:
             print("Immune full model not found")
         
-        if os.path.exists("src/multiplexed_image_annotator/cell_type_annotation/models/struct.pth"):
+        if (m := models_dir / "struct.pth").is_file():
             self.struct_model = vit_s(img_size=40, in_chans=7, num_classes=6, drop_path_rate=0.1, global_pool=False)
-            checkpoint = torch.load("src/multiplexed_image_annotator/cell_type_annotation/models/struct.pth", map_location=self.device)["model"]
+            checkpoint = torch.load(m, map_location=self.device)["model"]
             self.struct_model.load_state_dict(checkpoint)
             self.struct_model.eval()
             self.struct_model.to(self.device)
         else:
             print("Tissue structure model not found")
 
-        if os.path.exists("src/multiplexed_image_annotator/cell_type_annotation/models/nerve.pth"):
+        if (m := models_dir / "nerve.pth").is_file():
             self.nerve_model = vit_tiny(img_size=40, in_chans=3, num_classes=2, drop_path_rate=0.1, global_pool=False)
-            checkpoint = torch.load("src/multiplexed_image_annotator/cell_type_annotation/models/nerve.pth", map_location=self.device)["model"]
+            checkpoint = torch.load(m, map_location=self.device)["model"]
             self.nerve_model.load_state_dict(checkpoint)
             self.nerve_model.eval()
             self.nerve_model.to(self.device)
