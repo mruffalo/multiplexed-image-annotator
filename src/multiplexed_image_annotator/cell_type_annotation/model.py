@@ -626,10 +626,10 @@ class Annotator(object):
                             temp.append(self.preprocessor.intensity_all[marker][i][k])
                     colormap[j, q] = np.mean(temp)
             # save the heatmap
-            f = os.path.join(self.result_dir, f"{self.batch_id}_Integrated_heatmap.png")
+            f = os.path.join(self.result_dir, f"{self.batch_id}_Integrated_heatmap.pdf")
             sns.heatmap(colormap, cmap='vlag', xticklabels=self.channel_parser.markers, yticklabels=celltypes, linewidth=.5)
             plt.tight_layout()
-            plt.savefig(f)
+            plt.savefig(f, bbox_inches='tight')
             plt.close()
         else:
             for i in range(len(self.annotations)):
