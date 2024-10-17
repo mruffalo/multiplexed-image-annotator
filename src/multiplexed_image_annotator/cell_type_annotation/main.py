@@ -1,38 +1,50 @@
-from .model import Annotator
+from argparse import ArgumentParser
+from pathlib import Path
+
 import torch
-from .utils import gui_run
-
-marker_list_path = r"C:\Users\57539\Downloads\for_paul\for_paul\markers.txt"
-image_path = "data/debug.csv" # r"E:\HPA_TMA\20240426_HPA_TMA_G228_normal_paths.csv"
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-main_dir = "./"
-batch_id = ""
-strict = False
-normalization = True
-blur = 0.5
-confidence = 0.25
+from utils import gui_run
 
 
-# image_path = r"E:\HPA_TMA\20240426_HPA_TMA_G228_normal_114\20240426_HPA_TMA_cropped_32.tif"
-# mask_path = r"E:\HPA_TMA\20240426_HPA_TMA_G228_normal_114\20240426_HPA_TMA_cropped_32_cp_masks.png"
+def main(marker_list_path: Path, image_path: Path, mask_path: Path):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    main_dir = Path()
+    batch_id = ""
+    strict = False
+    normalization = True
+    blur = 0.5
+    confidence = 0.25
+    batch_size = 1
+    amax = 1
+    cell_size = 30
 
-# img = gui_run(marker_list_path, image_path, mask_path, device, main_dir, batch_id, strict, normalization, blur, confidence, None)
+    gui_run(
+        marker_list_path=marker_list_path,
+        image_path=image_path,
+        mask_path=mask_path,
+        device=device,
+        main_dir=main_dir,
+        batch_id=batch_id,
+        bs=batch_size,
+        strict=strict,
+        infer=False,
+        normalization=normalization,
+        blur=blur,
+        confidence=confidence,
+        amax=amax,
+        cell_size=cell_size,
+        cell_type_confidence=None,
+    )
 
 
-annotator = Annotator(marker_list_path, image_path, device, main_dir, batch_id, strict, normalization, blur, confidence)
-annotator.preprocess()
-annotator.predict(128)
-annotator.generate_heatmap(integrate=True)
-# annotator.umap_visualization()
-annotator.export_annotations()
-annotator.colorize()
-annotator.cell_type_composition()
-annotator.neighborhood_analysis(n_neighbors=15, integrate=True, normalize=False)
-annotator.clear_tmp()
+if __name__ == "__main__":
+    p = ArgumentParser()
+    p.add_argument("marker_list_path", type=Path)
+    p.add_argument("image_path", type=Path)
+    p.add_argument("mask_path", type=Path)
+    args = p.parse_args()
 
-intensity_dict = {}
-for i in range(len(annotator.preprocessor.intensity_full[0])):
-    intensity_dict[i + 1] = annotator.preprocessor.intensity_full[0][i]
-intensity_dict[0] = np.zeros_like(annotator.preprocessor.intensity_full[0][0])
-
-print("Done")
+    main(
+        marker_list_path=args.marker_list_path,
+        image_path=args.image_path,
+        mask_path=args.mask_path,
+    )
