@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import torch
-from utils import gui_run
+from .utils import gui_run
 
 
 def main(marker_list_path: Path, image_path: Path, mask_path: Path):
