@@ -53,7 +53,7 @@ if __name__ == "__main__":
     p.add_argument(
         "results_dir",
         type=Path,
-        default=Path("results"),
+        default=Path(),
         nargs="?",
     )
     args = p.parse_args()
