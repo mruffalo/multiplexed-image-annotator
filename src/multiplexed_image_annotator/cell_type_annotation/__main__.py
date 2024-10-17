@@ -50,7 +50,12 @@ if __name__ == "__main__":
     p.add_argument("marker_list_path", type=Path)
     p.add_argument("image_path", type=Path)
     p.add_argument("mask_path", type=Path)
-    p.add_argument("results_dir", type=Path, default=Path("results"))
+    p.add_argument(
+        "results_dir",
+        type=Path,
+        default=Path("results"),
+        nargs="?",
+    )
     args = p.parse_args()
 
     main(
