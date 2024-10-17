@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from scipy.ndimage import gaussian_filter
 import pickle
+from pathlib import Path
 
 from tifffile import imwrite
 from skimage.io import imread
@@ -17,7 +18,7 @@ from .markerImputer import MarkerImputer
 
 
 class ImageProcessor(object):
-    def __init__(self, csv_path, parser, main_path, device, batch_id='', infer=True, normalization=True, blur=0, amax=100, cell_size=30) -> None:
+    def __init__(self, csv_path, parser, main_path: Path, device, batch_id='', infer=True, normalization=True, blur=0, amax=100, cell_size=30) -> None:
         df = pd.read_csv(csv_path)
         self.image_paths = df['image_path']
         self.mask_paths = df['mask_path']

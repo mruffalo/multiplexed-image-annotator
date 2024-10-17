@@ -23,6 +23,8 @@ from sklearn.neighbors import NearestNeighbors
 import umap
 
 import pickle
+import json
+
 this_file = Path(__file__)
 models_dir = this_file.parent / 'models'
 
@@ -103,7 +105,7 @@ class Annotator(object):
     """
     Annotator class to predict cell types and tissue structures using the provided models
     """
-    def __init__(self, marker_list_path, image_path, device, main_dir = './', batch_id='', strict=True, infer=True, normalization=True, blur=False, amax=1, confidence=0.25, cell_size = 30, cell_type_confidence=None):
+    def __init__(self, marker_list_path, image_path, device, main_dir: Path = Path(), batch_id='', strict=True, infer=True, normalization=True, blur=False, amax=1, confidence=0.25, cell_size = 30, cell_type_confidence=None):
         self.device = device
         self.cell_types = ["B cell", "CD4 T cell", "CD8 T cell", "Dendritic cell", "Regulatory T cell", "Granulocyte cell", 
                            "Mast cell", "M1 macrophage cell", "M2 macrophage cell", "Natural killer cell", "Plasma cell",
@@ -703,9 +705,38 @@ class Annotator(object):
             raise ValueError("No annotations to export")
         for i in range(len(self.annotations)):
             f = os.path.join(self.result_dir, f"{self.batch_id}_annotation_{i}.txt")
-            with open(f, "w") as file:
+            with open(f, "w") as fh:
+                print("ID,RIBCA_CellType", file=fh)
                 for j in range(len(self.annotations[i])):
-                    file.write(f"{j} {self.annotations[i][j]}\n")
+                    print(f"{j},{self.annotations[i][j]}", file=fh)
+
+    def export_confidence(self):
+        if len(self.confidence_values) == 0:
+            raise ValueError("No confidence to export")
+        for i in range(len(self.confidence_values)):
+            f = os.path.join(self.result_dir, f"{self.batch_id}_confidence_{i}.txt")
+            with open(f, "w") as fh:
+                print("ID,RIBCA_CellType_Confidence", file=fh)
+                for j in range(len(self.confidence_values[i])):
+                    print(f"{j},{self.confidence_values[i][j]}", file=fh)
+
+    def export_confidence_thresholds(self):
+        if len(self.confidence_thresholds) == 0:
+            raise ValueError("No confidence to export")
+        for i in range(len(self.confidence_thresholds)):
+            f = os.path.join(self.result_dir, f"{self.batch_id}_confidence_thresholds_{i}.txt")
+            with open(f, "w") as fh:
+                print("ID,RIBCA_CellType_Confidence_Threshold", file=fh)
+                for j in range(len(self.confidence_thresholds[i])):
+                    print(f"{j},{self.confidence_thresholds[i][j]}", file=fh)
+
+    def export_votes(self):
+        if len(self.votes) == 0:
+            raise ValueError("No votes to export")
+        for i in range(len(self.votes)):
+            f = os.path.join(self.result_dir, f"{self.batch_id}_votes_{i}.json")
+            with open(f, "w") as fh:
+                json.dump(self.votes[i], fh)
 
     def colorize(self):
         colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [0, 255, 255], [255, 0, 255], [255, 165, 0],
@@ -733,7 +764,9 @@ class Annotator(object):
             f = os.path.join(self.result_dir, f"{self.batch_id}_colorized_annotation_{i}.png")
             Image.fromarray(colormap).save(f)
 
-            f = "./src/multiplexed_image_annotator/cell_type_annotation/_working_dir_temp/output_img.png"
+
+            f = this_file.parent / "_working_dir_temp/output_img.png"
+            f.parent.mkdir(exist_ok=True)
             Image.fromarray(colormap3).save(f)
 
             f = os.path.join(self.result_dir, f"{self.batch_id}_confidence_{i}.png")
