@@ -182,6 +182,7 @@ class Annotator(object):
     
     def load_models(self):
         if (m := models_dir / "immune_base.pth").is_file():
+            print("Loading immune base model from", m)
             self.immune_base_model = vit_s(img_size=40, in_chans=7, num_classes=5, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_base_model.load_state_dict(checkpoint)
@@ -191,6 +192,7 @@ class Annotator(object):
             print("Immune base model not found")
         
         if (m := models_dir / "immune_extended.pth").is_file():
+            print("Loading immune extended model from", m)
             self.immune_extended_model = vit_m(img_size=40, in_chans=10, num_classes=8, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_extended_model.load_state_dict(checkpoint)
@@ -200,6 +202,7 @@ class Annotator(object):
             print("Immune extended model not found")
         
         if (m := models_dir / "immune_full.pth").is_file():
+            print("Loading immune full model from", m)
             self.immune_full_model = vit_l(img_size=40, in_chans=15, num_classes=12, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_full_model.load_state_dict(checkpoint)
@@ -209,6 +212,7 @@ class Annotator(object):
             print("Immune full model not found")
         
         if (m := models_dir / "struct.pth").is_file():
+            print("Loading struct model from", m)
             self.struct_model = vit_s(img_size=40, in_chans=7, num_classes=6, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.struct_model.load_state_dict(checkpoint)
@@ -218,6 +222,7 @@ class Annotator(object):
             print("Tissue structure model not found")
 
         if (m := models_dir / "nerve.pth").is_file():
+            print("Loading nerve model from", m)
             self.nerve_model = vit_tiny(img_size=40, in_chans=3, num_classes=2, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.nerve_model.load_state_dict(checkpoint)
