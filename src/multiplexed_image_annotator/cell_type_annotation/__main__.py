@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import torch
-from .utils import gui_run
+from .gui_api import headless_run
 
 cuda_available = torch.cuda.is_available()
 print(f"{cuda_available=}")
@@ -26,7 +26,7 @@ def main(
     amax = 1
     cell_size = 30
 
-    gui_run(
+    headless_run(
         marker_list_path=marker_list_path,
         image_path=image_path,
         mask_path=mask_path,

@@ -4,7 +4,6 @@ from pathlib import Path
 
 from PIL import Image
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import seaborn as sns
 
 import torch
@@ -17,6 +16,8 @@ import timm.models.vision_transformer
 
 from .markerParse import MarkerParser
 from .preprocess import ImageProcessor
+from .logger import Logger
+from .utils import *
 
 from sklearn.neighbors import NearestNeighbors
 
@@ -28,19 +29,7 @@ import json
 this_file = Path(__file__)
 models_dir = this_file.parent / 'models'
 
-def number_to_rgb(value, cmap_name='viridis'):
-    if value < 0 or value > 1:
-        raise ValueError("Value must be between 0 and 1")
 
-    cmap = plt.get_cmap(cmap_name)
-    norm = mcolors.Normalize(vmin=0, vmax=1)
-
-    # Get the RGB color code
-    rgb = cmap(norm(value))[:3]  # Ignore the alpha value
-
-    rgb_255 = list(int(x * 255) for x in rgb)
-
-    return rgb_255
 
 class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
     """ Vision Transformer with support for global average pooling
@@ -115,11 +104,28 @@ class Annotator(object):
 
         self.batch_id = batch_id
 
-        self.channel_parser = MarkerParser(strict=strict)
+        self.logger = Logger(main_dir)
+        # hyperparameters as a dictionary
+        hyperparameters = {
+            "Batch name": batch_id,
+            "Strictly match panel(s)": strict,
+            "Normalize image(s)": normalization,
+            "Image blurring kernel size": blur,
+            "Percentile of intensity to upper clip": amax,
+            "Confidence threshold": confidence,
+            "Estimated cell size (in pixels)": cell_size
+        }
+
+        self.logger.log_all_hyperparameters(hyperparameters)
+        self.logger.log("")
+        self.logger.log("Start parsing the marker list.")
+
+
+        self.channel_parser = MarkerParser(strict=strict, logger=self.logger)
 
         self.channel_parser.parse(marker_list_path)
 
-        self.preprocessor = ImageProcessor(image_path, self.channel_parser, main_dir, device, batch_id, infer, normalization, blur, amax, cell_size)
+        self.preprocessor = ImageProcessor(image_path, self.channel_parser, main_dir, device, batch_id, infer, normalization, blur, amax, cell_size, self.logger)
         self._loaded = False
 
         self._n_images = 0
@@ -183,6 +189,7 @@ class Annotator(object):
     def load_models(self):
         if (m := models_dir / "immune_base.pth").is_file():
             print("Loading immune base model from", m)
+            self.logger.log(f"Loading immune base model from {m}")
             self.immune_base_model = vit_s(img_size=40, in_chans=7, num_classes=5, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_base_model.load_state_dict(checkpoint)
@@ -190,9 +197,11 @@ class Annotator(object):
             self.immune_base_model.to(self.device)
         else:
             print("Immune base model not found")
+            self.logger.log("Immune base model not found")
         
         if (m := models_dir / "immune_extended.pth").is_file():
             print("Loading immune extended model from", m)
+            self.logger.log(f"Loading immune extended model from {m}")
             self.immune_extended_model = vit_m(img_size=40, in_chans=10, num_classes=8, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_extended_model.load_state_dict(checkpoint)
@@ -200,9 +209,11 @@ class Annotator(object):
             self.immune_extended_model.to(self.device)
         else:
             print("Immune extended model not found")
+            self.logger.log("Immune extended model not found")
         
         if (m := models_dir / "immune_full.pth").is_file():
             print("Loading immune full model from", m)
+            self.logger.log(f"Loading immune full model from {m}")
             self.immune_full_model = vit_l(img_size=40, in_chans=15, num_classes=12, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.immune_full_model.load_state_dict(checkpoint)
@@ -210,9 +221,11 @@ class Annotator(object):
             self.immune_full_model.to(self.device)
         else:
             print("Immune full model not found")
+            self.logger.log("Immune full model not found")
         
         if (m := models_dir / "struct.pth").is_file():
             print("Loading struct model from", m)
+            self.logger.log(f"Loading struct model from {m}")
             self.struct_model = vit_s(img_size=40, in_chans=7, num_classes=6, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.struct_model.load_state_dict(checkpoint)
@@ -220,19 +233,25 @@ class Annotator(object):
             self.struct_model.to(self.device)
         else:
             print("Tissue structure model not found")
+            self.logger.log("Tissue structure model not found")
 
         if (m := models_dir / "nerve.pth").is_file():
             print("Loading nerve model from", m)
+            self.logger.log(f"Loading nerve model from {m}")
             self.nerve_model = vit_tiny(img_size=40, in_chans=3, num_classes=2, drop_path_rate=0.1, global_pool=False)
             checkpoint = torch.load(m, map_location=self.device)["model"]
             self.nerve_model.load_state_dict(checkpoint)
             self.nerve_model.eval()
             self.nerve_model.to(self.device)
+        else:
+            print("Nerve cell model not found")
+            self.logger.log("Nerve cell model not found")
         
         self._loaded = True
         
         
     def predict(self, batch_size=32):
+        self.logger.log("\nStart predicting cell types and tissue structures.")
         # check if models are loaded
         if self._loaded == False:
             self.load_models()
@@ -346,6 +365,7 @@ class Annotator(object):
                 self.immune_annotations.append(pred)
             else:
                 print("No immune cell model to predict")
+                self.logger.log("No immune cell model to predict")
 
 
             if self.channel_parser.struct:
@@ -383,6 +403,10 @@ class Annotator(object):
 
                 self.struct_annotations.append(pred)
 
+            else:
+                print("No structure model to predict")
+                self.logger.log("No structure model to predict")
+
             if self.channel_parser.nerve:
                 f = os.path.join(self.temp_dir, f"{self.batch_id}_{ii}_nerve_cell.pt")
                 if os.path.exists(f):
@@ -418,10 +442,19 @@ class Annotator(object):
 
                 self.nerve_annotations.append(pred)
 
+            else:
+                print("No nerve cell model to predict")
+                self.logger.log("No nerve cell model to predict")
+
         self.merge_by_voting()
                 
 
     def merge_by_voting(self):
+        msg = ""
+        for c in self.applied_cell_types:
+            msg += f"{c}, "
+        msg = msg[:-2] + " are annotated."
+
         # full
         if len(self.immune_full_pred) > 0 and len(self.struct_pred) > 0 and len(self.nerve_pred) > 0:
             for i in range(len(self.immune_full_pred)):
@@ -431,9 +464,7 @@ class Annotator(object):
                 self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.immune_full_pred[i])):
-                    vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
-                            "M2 macrophage cell": 0, "Regulatory T cell": 0, "Granulocyte cell": 0, "Plasma cell": 0, "Natural killer cell": 0, "Mast cell": 0,
-                            "Stroma cell": 0 , "Smooth muscle": 0, "Endothelial cell": 0, "Epithelial cell": 0, "Proliferating/tumor cell": 0, "Nerve cell": 0, "Others": 0}
+                    vote = get_void_vote()
                     pred = self.immune_full_pred[i][j]
                     for k in pred:
                         vote[k] += pred[k]
@@ -468,9 +499,7 @@ class Annotator(object):
                 self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.immune_annotations[i])):
-                    vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
-                            "M2 macrophage cell": 0, "Regulatory T cell": 0, "Granulocyte cell": 0, "Plasma cell": 0, "Natural killer cell": 0, "Mast cell": 0,
-                            "Stroma cell": 0 , "Smooth muscle": 0, "Endothelial cell": 0, "Epithelial cell": 0, "Proliferating/tumor cell": 0, "Nerve cell": 0}
+                    vote = get_void_vote()
                     pred = self.immune_annotations[i][j]
                     for k in pred:
                         if k != "Others":
@@ -503,9 +532,7 @@ class Annotator(object):
                 self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.struct_annotations[i])):
-                    vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
-                            "M2 macrophage cell": 0, "Regulatory T cell": 0, "Granulocyte cell": 0, "Plasma cell": 0, "Natural killer cell": 0, "Mast cell": 0,
-                            "Stroma cell": 0 , "Smooth muscle": 0, "Endothelial cell": 0, "Epithelial cell": 0, "Proliferating/tumor cell": 0, "Nerve cell": 0}
+                    vote = get_void_vote()
                     pred = self.struct_annotations[i][j]
                     for k in pred:
                         if k != "Others":
@@ -538,9 +565,7 @@ class Annotator(object):
                 self.confidence_thresholds.append([])
                 self.votes.append([])
                 for j in range(len(self.immune_annotations[i])):
-                    vote = {"CD4 T cell": 0, "CD8 T cell": 0, "Dendritic cell": 0, "B cell": 0, "M1 macrophage cell": 0, 
-                            "M2 macrophage cell": 0, "Regulatory T cell": 0, "Granulocyte cell": 0, "Plasma cell": 0, "Natural killer cell": 0, "Mast cell": 0,
-                            "Stroma cell": 0 , "Smooth muscle": 0, "Endothelial cell": 0, "Epithelial cell": 0, "Proliferating/tumor cell": 0, "Nerve cell": 0}
+                    vote = get_void_vote()
                     pred = self.immune_annotations[i][j]
                     for k in pred:
                         if k != "Others":
@@ -627,6 +652,9 @@ class Annotator(object):
         
         else:
             raise ValueError("No predictions to merge")
+        
+        for i in range(len(self.annotations)):
+            assert len(self.annotations[i]) == len(self.preprocessor.cell_pos_dict[i].keys())
 
 
     def generate_heatmap(self, integrate=False):
@@ -637,18 +665,17 @@ class Annotator(object):
             for i in range(len(self.annotations)):
                 temp += self.annotations[i]
             celltypes = np.unique(temp)
-            colormap = np.zeros((len(celltypes), len(self.channel_parser.markers)))
+            colormap = np.zeros((len(celltypes), len(self.preprocessor.intensity_full[0][0])))
             for j in range(len(celltypes)):
-                for q in range(len(self.channel_parser.markers)):
-                    marker = self.channel_parser.markers[q]
-                    temp = []
-                    for i in range(len(self.annotations)):
-                        indices = [k for k in range(len(self.annotations[i])) if self.annotations[i][k] == celltypes[j]]
-                        for k in indices:
-                            temp.append(self.preprocessor.intensity_all[marker][i][k])
-                    colormap[j, q] = np.mean(temp)
+                temp = []
+                for i in range(len(self.annotations)):
+                    indices = [k for k in range(len(self.annotations[i])) if self.annotations[i][k] == celltypes[j]]
+                    for k in indices:
+                        temp.append(self.preprocessor.intensity_full[i][k])
+                colormap[j] = np.mean(temp, axis=0)
             # save the heatmap
             f = os.path.join(self.result_dir, f"{self.batch_id}_Integrated_heatmap.pdf")
+            plt.figure(figsize=(colormap.shape[1] // 4, colormap.shape[0] // 4))
             sns.heatmap(colormap, cmap='vlag', xticklabels=self.channel_parser.markers, yticklabels=celltypes, linewidth=.5)
             plt.tight_layout()
             plt.savefig(f, bbox_inches='tight')
@@ -656,23 +683,22 @@ class Annotator(object):
         else:
             for i in range(len(self.annotations)):
                 celltypes = np.unique(self.annotations[i])
-                colormap = np.zeros((len(celltypes), len(self.channel_parser.markers)))
+                colormap = np.zeros((len(celltypes), len(self.preprocessor.intensity_full[0][0])))
                 for j in range(len(celltypes)):
                     # get indices of the cell type
                     indices = [k for k in range(len(self.annotations[i])) if self.annotations[i][k] == celltypes[j]]
-                    for q in range(len(self.channel_parser.markers)):
-                        marker = self.channel_parser.markers[q]
-                        temp = []
-                        assert len(self.preprocessor.intensity_all[marker][i]) == len(self.annotations[i])
-                        for k in indices:
-                            temp.append(self.preprocessor.intensity_all[marker][i][k])
-                        colormap[j, q] = np.mean(temp)
+                    temp = []
+                    assert len(self.preprocessor.intensity_full[i]) == len(self.annotations[i])
+                    for k in indices:
+                        temp.append(self.preprocessor.intensity_full[i][k])
+                    colormap[j] = np.mean(temp, axis=0)
                 # save the heatmap
                 f = os.path.join(self.result_dir, f"{self.batch_id}_heatmap_{i}.png")
                 sns.heatmap(colormap, cmap='vlag', xticklabels=self.channel_parser.markers, yticklabels=celltypes, linewidth=.5)
                 plt.tight_layout()
                 plt.savefig(f)
                 plt.close()
+                
                 
 
 
@@ -712,8 +738,8 @@ class Annotator(object):
             f = os.path.join(self.result_dir, f"{self.batch_id}_annotation_{i}.txt")
             with open(f, "w") as fh:
                 print("ID,RIBCA_CellType", file=fh)
-                for j in range(len(self.annotations[i])):
-                    print(f"{j},{self.annotations[i][j]}", file=fh)
+                for j, key in enumerate(self.preprocessor.cell_pos_dict[i].keys()):
+                    print(f"{key},{self.annotations[i][j]}", file=fh)
 
     def export_confidence(self):
         if len(self.confidence_values) == 0:
@@ -722,8 +748,8 @@ class Annotator(object):
             f = os.path.join(self.result_dir, f"{self.batch_id}_confidence_{i}.txt")
             with open(f, "w") as fh:
                 print("ID,RIBCA_CellType_Confidence", file=fh)
-                for j in range(len(self.confidence_values[i])):
-                    print(f"{j},{self.confidence_values[i][j]}", file=fh)
+                for j, key in enumerate(self.preprocessor.cell_pos_dict[i].keys()):
+                    print(f"{key},{self.confidence_values[i][j]}", file=fh)
 
     def export_confidence_thresholds(self):
         if len(self.confidence_thresholds) == 0:
@@ -732,16 +758,17 @@ class Annotator(object):
             f = os.path.join(self.result_dir, f"{self.batch_id}_confidence_thresholds_{i}.txt")
             with open(f, "w") as fh:
                 print("ID,RIBCA_CellType_Confidence_Threshold", file=fh)
-                for j in range(len(self.confidence_thresholds[i])):
-                    print(f"{j},{self.confidence_thresholds[i][j]}", file=fh)
+                for j, key in enumerate(self.preprocessor.cell_pos_dict[i].keys()):
+                    print(f"{key},{self.confidence_thresholds[i][j]}", file=fh)
 
     def export_votes(self):
         if len(self.votes) == 0:
             raise ValueError("No votes to export")
         for i in range(len(self.votes)):
-            f = os.path.join(self.result_dir, f"{self.batch_id}_votes_{i}.json")
+            f = os.path.join(self.result_dir, f"{self.batch_id}_votes_{i}.txt")
             with open(f, "w") as fh:
-                json.dump(self.votes[i], fh)
+                for j, key in enumerate(self.preprocessor.cell_pos_dict[i].keys()):
+                    print(f"{key},{self.votes[i][j]}", file=fh)
 
     def colorize(self):
         colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [0, 255, 255], [255, 0, 255], [255, 165, 0],
@@ -758,9 +785,9 @@ class Annotator(object):
             colormap = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)
             colormap2 = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)
             colormap3 = np.zeros((mask.shape[0], mask.shape[1]), dtype=np.uint8)
-            for j in range(1, mask.max() + 1):
+            for j, key in enumerate(self.preprocessor.cell_pos_dict[i].keys()):
                 celltype_pred = self.cell_types.index(self.annotations[i][j - 1])
-                row, col = self.preprocessor.cell_pos_dict[i][j]
+                row, col = self.preprocessor.cell_pos_dict[i][key]
                 colormap[row, col, :] = colors[celltype_pred]
                 colormap2[row, col, :] = self.confidence[i][j - 1]
                 colormap3[row, col] = celltype_pred + 1
@@ -848,8 +875,8 @@ class Annotator(object):
         
         if integrate:
             neighborhood = np.zeros((len(self.applied_cell_types), len(self.applied_cell_types)))
-            for i in range(len(self.annotations)):
-                coordinates = self.preprocessor.cell_pos_dict[i]
+            for i, key in enumerate(self.preprocessor.cell_pos_dict.keys()):
+                coordinates = self.preprocessor.cell_pos_dict[key]
                 # to array
                 coordinates = [[np.mean(coordinates[k][0]), np.mean(coordinates[k][1])] for k in sorted(coordinates.keys())]
                 assert len(coordinates) == len(self.annotations[i])
@@ -883,9 +910,9 @@ class Annotator(object):
 
                         
         else:
-            for i in range(len(self.annotations)):
+            for i, key in enumerate(self.preprocessor.cell_pos_dict.keys()):
                 neighborhood = np.zeros((len(self.applied_cell_types), len(self.applied_cell_types)))
-                coordinates = self.preprocessor.cell_pos_dict[i]
+                coordinates = self.preprocessor.cell_pos_dict[key]
                 # to array
                 coordinates = [[np.mean(coordinates[k][0]), np.mean(coordinates[k][1])] for k in sorted(coordinates.keys())]
                 assert len(coordinates) == len(self.annotations[i])
