@@ -1,7 +1,11 @@
+import json
 from argparse import ArgumentParser
 from pathlib import Path
+from pprint import pprint
+from typing import Optional
 
 import torch
+
 from .gui_api import headless_run
 
 cuda_available = torch.cuda.is_available()
@@ -13,36 +17,51 @@ def main(
     image_path: Path,
     mask_path: Path,
     results_dir: Path,
+    hyperparameters_path: Optional[Path] = None,
 ):
     results_dir.mkdir(exist_ok=True, parents=True)
 
     device = torch.device("cuda" if cuda_available else "cpu")
-    batch_id = ""
-    strict = False
-    normalization = True
-    blur = 0.5
-    confidence = 0.25
-    batch_size = 1
-    amax = 1
-    cell_size = 30
 
-    headless_run(
-        marker_list_path=marker_list_path,
-        image_path=image_path,
-        mask_path=mask_path,
-        device=device,
-        main_dir=results_dir,
-        batch_id=batch_id,
-        bs=batch_size,
-        strict=strict,
-        infer=False,
-        normalization=normalization,
-        blur=blur,
-        confidence=confidence,
-        amax=amax,
-        cell_size=cell_size,
-        cell_type_confidence=None,
-    )
+    hyperparameters = {}
+    if hyperparameters_path is not None:
+        print("Loading hyperparameters from", hyperparameters_path)
+        with open(hyperparameters_path) as f:
+            hyperparameters = json.load(f)
+
+    batch_id = "headless"
+    strict = hyperparameters.get("strict", False)
+    infer = hyperparameters.get("infer", False)
+    normalization = hyperparameters.get("normalize", True)
+    blur = hyperparameters.get("blur", 0.5)
+    confidence = hyperparameters.get("confidence", 0.25)
+    batch_size = 1
+    amax = hyperparameters.get("upper_limit", 1)
+    cell_size = hyperparameters.get("cell_size", 30)
+    cell_type_confidence = hyperparameters.get("cell_type_confidence")
+
+    kwargs = {
+        "marker_list_path": marker_list_path,
+        "image_path": image_path,
+        "mask_path": mask_path,
+        "device": device,
+        "main_dir": results_dir,
+        "batch_id": batch_id,
+        "bs": batch_size,
+        "strict": strict,
+        "infer": infer,
+        "normalization": normalization,
+        "blur": blur,
+        "confidence": confidence,
+        "amax": amax,
+        "cell_size": cell_size,
+        "cell_type_confidence": cell_type_confidence,
+    }
+
+    print("Starting headless run with parameters:")
+    pprint(kwargs)
+
+    headless_run(**kwargs)
 
 
 if __name__ == "__main__":
@@ -56,6 +75,7 @@ if __name__ == "__main__":
         default=Path(),
         nargs="?",
     )
+    p.add_argument("hyperparamters_path", type=Path, nargs="?")
     args = p.parse_args()
 
     main(
@@ -63,4 +83,5 @@ if __name__ == "__main__":
         image_path=args.image_path,
         mask_path=args.mask_path,
         results_dir=args.results_dir,
+        hyperparameters_path=args.hyperparamters_path,
     )
