@@ -1,4 +1,5 @@
 from functools import partial
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -6,7 +7,8 @@ import numpy as np
 import os
 from timm.models.vision_transformer import PatchEmbed, Block
 
-
+this_file = Path(__file__)
+models_dir = this_file.parent / 'models'
 
 def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False):
     """
@@ -257,18 +259,18 @@ class MaskedAutoencoderViT(nn.Module):
 
 class MarkerImputer():
     def __init__(self, channel_index, device, panel=""):
-        if panel == "immune_full" and os.path.exists(r"src/multiplexed_image_annotator/cell_type_annotation/models/immune_full_impute.pth"):
-            checkpoint = torch.load(r"src/multiplexed_image_annotator/cell_type_annotation/models/immune_full_impute.pth", map_location=device)["model"]
+        if panel == "immune_full" and (m := models_dir / "immune_full_impute.pth").is_file():
+            checkpoint = torch.load(m, map_location=device)["model"]
             img_size = (120, 200)
             channel_number = 15
             self.shape = (3, 5)
-        elif panel == "immune_extended" and os.path.exists(r"src/multiplexed_image_annotator/cell_type_annotation/models/immune_extended_impute.pth"):
-            checkpoint = torch.load(r"src/multiplexed_image_annotator/cell_type_annotation/models/immune_extended_impute.pth", map_location=device)["model"]
+        elif panel == "immune_extended" and (m := models_dir /"immune_extended_impute.pth").is_file():
+            checkpoint = torch.load(m, map_location=device)["model"]
             img_size = (80, 200)
             channel_number = 10
             self.shape = (2, 5)
-        elif panel == "immune_base" and os.path.exists(r"src/multiplexed_image_annotator/cell_type_annotation/models/immune_base_impute.pth"):
-            checkpoint = torch.load(r"src/multiplexed_image_annotator/cell_type_annotation/models/immune_base_impute.pth", map_location=device)["model"]
+        elif panel == "immune_base" and (m := models_dir / "immune_base_impute.pth"):
+            checkpoint = torch.load(m, map_location=device)["model"]
             img_size = (40, 280)
             channel_number = 7
             self.shape = (1, 7)
@@ -327,4 +329,3 @@ class MarkerImputer():
 
 
         return data
-
