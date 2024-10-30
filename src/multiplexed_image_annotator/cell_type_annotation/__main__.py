@@ -16,10 +16,9 @@ def main(
     marker_list_path: Path,
     image_path: Path,
     mask_path: Path,
-    results_dir: Path,
     hyperparameters_path: Optional[Path] = None,
 ):
-    results_dir.mkdir(exist_ok=True, parents=True)
+    results_dir = Path()
 
     device = torch.device("cuda" if cuda_available else "cpu")
 
@@ -69,19 +68,12 @@ if __name__ == "__main__":
     p.add_argument("marker_list_path", type=Path)
     p.add_argument("image_path", type=Path)
     p.add_argument("mask_path", type=Path)
-    p.add_argument(
-        "results_dir",
-        type=Path,
-        default=Path(),
-        nargs="?",
-    )
-    p.add_argument("hyperparamters_path", type=Path, nargs="?")
+    p.add_argument("hyperparameters_path", type=Path, nargs="?")
     args = p.parse_args()
 
     main(
         marker_list_path=args.marker_list_path,
         image_path=args.image_path,
         mask_path=args.mask_path,
-        results_dir=args.results_dir,
-        hyperparameters_path=args.hyperparamters_path,
+        hyperparameters_path=args.hyperparameters_path,
     )

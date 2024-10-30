@@ -3,15 +3,11 @@ from tqdm import tqdm
 from tifffile import imwrite
 import numpy as np
 import os
-from pathlib import Path
 from skimage import filters
 from skimage.morphology import dilation, disk
-from skimage.io import imread
-import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from .model import Annotator
 
 def number_to_rgb(value, cmap_name='viridis'):
     if value < 0 or value > 1:
