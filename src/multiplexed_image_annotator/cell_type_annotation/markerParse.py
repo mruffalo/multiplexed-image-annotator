@@ -68,9 +68,9 @@ class MarkerParser():
                         'CD3e': 'CD3', 'CK': 'PanCK', 'CytoKeratin': 'PanCK', 'Cytokeratin': 'PanCK', 'Cytokeratin-19': 'PanCK', 'panCK': 'PanCK'}
         # replace the markers
         for i in range(len(marker_list)):
-            if marker_list[i] in replacements:
-                marker_list[i] = replacements[marker_list[i]]
-                self.logger.log(f"Replaced the marker name {replacements[marker_list[i]]} with {marker_list[i]} to match our panel.")
+            if (orig := marker_list[i]) in replacements:
+                replacement = marker_list[i] = replacements[marker_list[i]]
+                self.logger.log(f"Replaced the marker name {orig} with {replacement} to match our panel.")
         self.logger.log("")
 
         marker_list = list(marker_list)
@@ -131,4 +131,3 @@ if __name__ == '__main__':
     print(marker_parser.indices['immune_full'])
     print(marker_parser.indices['structure'])
     print(marker_parser.indices['nerve_cell'])
-        
