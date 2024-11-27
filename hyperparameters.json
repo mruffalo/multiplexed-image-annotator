@@ -5,8 +5,9 @@
     "main_dir": "./",
     "strict": false,
     "normalize": true,
-    "blur": 1,
-    "upper_limit": 100,
+    "infer": true,
+    "blur": 0.3,
+    "upper_limit": 99.8,
     "confidence": 0.3,
     "cell_type_confidence":
     {
