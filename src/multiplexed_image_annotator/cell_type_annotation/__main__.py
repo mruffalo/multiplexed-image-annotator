@@ -30,12 +30,12 @@ def main(
 
     batch_id = "headless"
     strict = hyperparameters.get("strict", False)
-    infer = hyperparameters.get("infer", False)
+    infer = hyperparameters.get("infer", True)
     normalization = hyperparameters.get("normalize", True)
-    blur = hyperparameters.get("blur", 0.5)
-    confidence = hyperparameters.get("confidence", 0.25)
+    blur = hyperparameters.get("blur", 0.3)
+    confidence = hyperparameters.get("confidence", 0.3)
     batch_size = 1
-    amax = hyperparameters.get("upper_limit", 1)
+    amax = hyperparameters.get("upper_limit", 99.8)
     cell_size = hyperparameters.get("cell_size", 30)
     cell_type_confidence = hyperparameters.get("cell_type_confidence")
 
