@@ -13,9 +13,7 @@ print(f"{cuda_available=}")
 
 
 def main(
-    marker_list_path: Path,
-    image_path: Path,
-    mask_path: Path,
+    directory: Path,
     hyperparameters_path: Optional[Path] = None,
 ):
     results_dir = Path()
@@ -40,9 +38,9 @@ def main(
     cell_type_confidence = hyperparameters.get("cell_type_confidence")
 
     kwargs = {
-        "marker_list_path": marker_list_path,
-        "image_path": image_path,
-        "mask_path": mask_path,
+        "marker_list_path": directory / 'markers.txt',
+        "image_path": directory / 'expr.tiff',
+        "mask_path": directory / 'mask.tiff',
         "device": device,
         "main_dir": results_dir,
         "batch_id": batch_id,
@@ -65,15 +63,11 @@ def main(
 
 if __name__ == "__main__":
     p = ArgumentParser()
-    p.add_argument("marker_list_path", type=Path)
-    p.add_argument("image_path", type=Path)
-    p.add_argument("mask_path", type=Path)
+    p.add_argument("directory", type=Path)
     p.add_argument("hyperparameters_path", type=Path, nargs="?")
     args = p.parse_args()
 
     main(
-        marker_list_path=args.marker_list_path,
-        image_path=args.image_path,
-        mask_path=args.mask_path,
+        directory=args.directory,
         hyperparameters_path=args.hyperparameters_path,
     )
