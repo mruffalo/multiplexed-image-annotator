@@ -37,10 +37,15 @@ def main(
     cell_size = hyperparameters.get("cell_size", 30)
     cell_type_confidence = hyperparameters.get("cell_type_confidence")
 
+    results_dir = Path("results")
+    results_dir.mkdir(exist_ok=True, parents=True)
+    with open(results_dir / "image_name.txt", "w") as f:
+        print(directory.name, file=f)
+
     kwargs = {
-        "marker_list_path": directory / 'markers.txt',
-        "image_path": directory / 'expr.tiff',
-        "mask_path": directory / 'mask.tiff',
+        "marker_list_path": directory / "markers.txt",
+        "image_path": directory / "expr.tiff",
+        "mask_path": directory / "mask.tiff",
         "device": device,
         "main_dir": results_dir,
         "batch_id": batch_id,
