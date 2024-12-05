@@ -16,7 +16,7 @@ def main(
     directory: Path,
     hyperparameters_path: Optional[Path] = None,
 ):
-    results_dir = Path()
+    dest_dir = Path()
 
     device = torch.device("cuda" if cuda_available else "cpu")
 
@@ -37,7 +37,7 @@ def main(
     cell_size = hyperparameters.get("cell_size", 30)
     cell_type_confidence = hyperparameters.get("cell_type_confidence")
 
-    results_dir = Path("results")
+    results_dir = dest_dir / "results"
     results_dir.mkdir(exist_ok=True, parents=True)
     with open(results_dir / "image_name.txt", "w") as f:
         print(directory.name, file=f)
@@ -47,7 +47,7 @@ def main(
         "image_path": directory / "expr.tiff",
         "mask_path": directory / "mask.tiff",
         "device": device,
-        "main_dir": results_dir,
+        "main_dir": dest_dir,
         "batch_id": batch_id,
         "bs": batch_size,
         "strict": strict,
