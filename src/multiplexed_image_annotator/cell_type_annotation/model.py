@@ -368,7 +368,7 @@ class Annotator(object):
                 self.logger.log("No immune cell model to predict")
 
 
-            if self.channel_parser.struct:
+            if self.channel_parser.structure:
                 f = os.path.join(self.temp_dir, f"{self.batch_id}_{ii}_structure.pt")
                 if os.path.exists(f):
                     images = torch.load(f)
@@ -407,7 +407,7 @@ class Annotator(object):
                 print("No structure model to predict")
                 self.logger.log("No structure model to predict")
 
-            if self.channel_parser.nerve:
+            if self.channel_parser.nerve_cell:
                 f = os.path.join(self.temp_dir, f"{self.batch_id}_{ii}_nerve_cell.pt")
                 if os.path.exists(f):
                     images = torch.load(f)
@@ -769,6 +769,14 @@ class Annotator(object):
             with open(f, "w") as fh:
                 for j, key in enumerate(self.preprocessor.cell_pos_dict[i].keys()):
                     print(f"{key},{self.votes[i][j]}", file=fh)
+
+    def export_panels(self):
+        panel_data = {
+            panel: getattr(self.channel_parser, panel)
+            for panel in self.channel_parser.panels
+        }
+        with open(os.path.join(self.result_dir, 'panels.json'), 'w') as f:
+            json.dump(panel_data, f)
 
     def colorize(self):
         colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [0, 255, 255], [255, 0, 255], [255, 165, 0],

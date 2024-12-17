@@ -19,7 +19,7 @@ def gui_run(marker_list_path, image_path, mask_path, device, main_dir, batch_id,
     
     path_ = os.path.join(main_dir, "images.csv")
     annotator = Annotator(marker_list_path, path_, device, main_dir, batch_id, strict, infer, normalization, blur, amax, confidence, cell_size, cell_type_confidence)
-    if not annotator.channel_parser.immune_base and not annotator.channel_parser.immune_extended and not annotator.channel_parser.immune_full and not annotator.channel_parser.struct and not annotator.channel_parser.nerve:
+    if not annotator.channel_parser.immune_base and not annotator.channel_parser.immune_extended and not annotator.channel_parser.immune_full and not annotator.channel_parser.structure and not annotator.channel_parser.nerve_cell:
         raise ValueError("No panels are applied. Please check the marker list.")
     annotator.preprocess()
     annotator.predict(bs)
@@ -38,7 +38,7 @@ def gui_run(marker_list_path, image_path, mask_path, device, main_dir, batch_id,
 
 def gui_batch_run(marker_list_path, image_path, device, main_dir, batch_id, bs, strict, infer, normalization, blur, amax, confidence, cell_size, cell_type_confidence):
     annotator = Annotator(marker_list_path, image_path, device, main_dir, batch_id, strict, infer, normalization, blur, amax, confidence, cell_size, cell_type_confidence)
-    if not annotator.channel_parser.immune_base and not annotator.channel_parser.immune_extended and not annotator.channel_parser.immune_full and not annotator.channel_parser.struct and not annotator.channel_parser.nerve:
+    if not annotator.channel_parser.immune_base and not annotator.channel_parser.immune_extended and not annotator.channel_parser.immune_full and not annotator.channel_parser.structure and not annotator.channel_parser.nerve_cell:
         raise ValueError("No panels are applied. Please check the marker list.")
     annotator.preprocess()
     annotator.predict(bs)
@@ -124,7 +124,7 @@ def headless_run(
     path_ = main_dir / "images.csv"
     annotator = Annotator(marker_list_path, path_, device, main_dir, batch_id, strict, infer, normalization, blur, amax,
                           confidence, cell_size, cell_type_confidence)
-    if not annotator.channel_parser.immune_base and not annotator.channel_parser.immune_extended and not annotator.channel_parser.immune_full and not annotator.channel_parser.struct and not annotator.channel_parser.nerve:
+    if not annotator.channel_parser.immune_base and not annotator.channel_parser.immune_extended and not annotator.channel_parser.immune_full and not annotator.channel_parser.structure and not annotator.channel_parser.nerve_cell:
         raise ValueError("No panels are applied. Please check the marker list.")
     annotator.preprocess()
     annotator.predict(bs)
@@ -133,6 +133,7 @@ def headless_run(
     annotator.export_confidence()
     annotator.export_confidence_thresholds()
     annotator.export_votes()
+    annotator.export_panels()
     annotator.colorize()
     annotator.cell_type_composition()
     annotator.clear_tmp()

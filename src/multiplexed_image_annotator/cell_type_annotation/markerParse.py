@@ -19,8 +19,8 @@ class MarkerParser():
         self.immune_base = False
         self.immune_extended = False
         self.immune_full = False
-        self.struct = False
-        self.nerve = False
+        self.structure = False
+        self.nerve_cell = False
 
         self.strict = strict
         self.markers = []
@@ -101,6 +101,6 @@ class MarkerParser():
         if self.indices['immune_full']:
             self.immune_full = True
         if self.indices['structure']:
-            self.struct = True
+            self.structure = True
         if self.indices['nerve_cell']:
-            self.nerve = True
+            self.nerve_cell = True
